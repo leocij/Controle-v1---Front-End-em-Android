@@ -4,6 +4,7 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.Parcelable;
 import android.support.annotation.Nullable;
 import android.support.annotation.RequiresApi;
 import android.support.design.widget.FloatingActionButton;
@@ -11,17 +12,21 @@ import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentTransaction;
 import android.support.v7.app.AlertDialog;
 import android.view.LayoutInflater;
+import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.inputmethod.InputMethodManager;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.ListView;
+import android.widget.ScrollView;
 import android.widget.Toast;
 
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.io.Serializable;
 import java.math.BigDecimal;
 import java.text.DateFormat;
 import java.text.ParseException;
@@ -31,6 +36,8 @@ import java.util.Date;
 import java.util.List;
 import java.util.Locale;
 import java.util.concurrent.ExecutionException;
+
+import static android.content.Context.INPUT_METHOD_SERVICE;
 
 /*
  * Created by leoci on 27/05/2017.
@@ -45,6 +52,7 @@ public class ControleFragment extends Fragment {
     @Override
     public View onCreateView(LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
         view = inflater.inflate(R.layout.activity_controle, container, false);
+
         FloatingActionButton fab = (FloatingActionButton) view.findViewById(R.id.controleFab);
 
         imprime(view);
@@ -138,7 +146,23 @@ public class ControleFragment extends Fragment {
         dialogo.setNegativeButton("Editar", new DialogInterface.OnClickListener() {
             @Override
             public void onClick(DialogInterface dialog, int which) {
-                CarregaTelaEditar(selecionado);
+                //CarregaTelaEditar(selecionado);
+
+                cookie = getArguments().getString("cookie");
+                Bundle bundle = new Bundle();
+                bundle.putString("cookie", cookie);
+                bundle.putString("identifier", selecionado.getIdentifier().toString());
+                bundle.putString("data", selecionado.getData().toString());
+                bundle.putString("descricao", selecionado.getDescricao().toString());
+                bundle.putString("entrada", selecionado.getEntrada().toString());
+                bundle.putString("saida", selecionado.getSaida().toString());
+
+                EditaControleFragment edita = new EditaControleFragment();
+                edita.setArguments(bundle);
+                android.support.v4.app.FragmentManager fm = getFragmentManager();
+                FragmentTransaction ft = fm.beginTransaction();
+                ft.replace(R.id.fragment_content, edita);
+                ft.commit();
             }
         });
 
@@ -184,10 +208,4 @@ public class ControleFragment extends Fragment {
         dialogo.setNeutralButton("Cancelar", null);
         dialogo.show();
     }
-
-    private void CarregaTelaEditar(Controle selecionado) {
-
-    }
-
-
 }

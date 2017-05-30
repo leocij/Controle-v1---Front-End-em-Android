@@ -34,7 +34,7 @@ class PostAsyncTask extends AsyncTask<String,String,String> {
             wr.close();
             int codeResponse = httpURLConnection.getResponseCode();
             setCodeResponse(codeResponse);
-            if (codeResponse != 201) {
+            if (codeResponse < 200 || codeResponse > 206) {
                 return "http";
             } else {
                 return "sucess";

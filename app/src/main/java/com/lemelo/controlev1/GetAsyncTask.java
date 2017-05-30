@@ -32,7 +32,7 @@ class GetAsyncTask extends AsyncTask<String,String,String> {
             httpURLConnection.setRequestProperty("Cookie", "JSESSIONID=" + params[2]);
             int codeResponse = httpURLConnection.getResponseCode();
             setCodeResponse(codeResponse);
-            if (codeResponse != 200) {
+            if (codeResponse < 200 || codeResponse > 206) {
                 return "http";
             } else {
                 InputStream inputStream = httpURLConnection.getInputStream();

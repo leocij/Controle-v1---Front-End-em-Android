@@ -2,50 +2,40 @@ package com.lemelo.controlev1;
 
 import android.os.AsyncTask;
 
-import java.io.BufferedReader;
+import java.io.DataOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.ProtocolException;
 import java.net.URL;
 
-/**
+/*
  * Created by leoci on 30/05/2017.
  */
 
-class DeleteAsyncTask extends AsyncTask<String,String,String> {
+class PutAsyncTask extends AsyncTask<String,String,String> {
     private int codeResponse;
-    private String dado;
 
     @Override
     protected String doInBackground(String... params) {
         HttpURLConnection httpURLConnection = null;
-        String data = "";
 
         try {
             URL url = new URL(params[0]);
             httpURLConnection = (HttpURLConnection) url.openConnection();
-            httpURLConnection.setRequestMethod("DELETE");
+            httpURLConnection.setRequestMethod("PUT");
             httpURLConnection.setDoOutput(true);
             httpURLConnection.setRequestProperty("Content-Type", "application/json");
             httpURLConnection.setRequestProperty("Cookie", "JSESSIONID=" + params[2]);
-            httpURLConnection.connect();
+            DataOutputStream wr = new DataOutputStream(httpURLConnection.getOutputStream());
+            wr.writeBytes(params[1]);
+            wr.flush();
+            wr.close();
             int codeResponse = httpURLConnection.getResponseCode();
             setCodeResponse(codeResponse);
             if (codeResponse < 200 || codeResponse > 206) {
                 return "http";
             } else {
-                InputStream in = httpURLConnection.getInputStream();
-                InputStreamReader inputStreamReader = new InputStreamReader(in);
-                int inputStreamData = inputStreamReader.read();
-                while (inputStreamData != -1) {
-                    char current = (char) inputStreamData;
-                    inputStreamData = inputStreamReader.read();
-                    data += current;
-                }
-                setDado(data);
                 return "sucess";
             }
         } catch (ProtocolException e) {
@@ -68,13 +58,5 @@ class DeleteAsyncTask extends AsyncTask<String,String,String> {
 
     public int getCodeResponse() {
         return codeResponse;
-    }
-
-    public String getDado() {
-        return dado;
-    }
-
-    public void setDado(String dado) {
-        this.dado = dado;
     }
 }

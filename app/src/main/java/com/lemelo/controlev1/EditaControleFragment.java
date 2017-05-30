@@ -2,12 +2,12 @@ package com.lemelo.controlev1;
 
 import android.icu.math.BigDecimal;
 import android.icu.text.SimpleDateFormat;
-import android.icu.util.Calendar;
 import android.os.Build;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
 import android.support.annotation.RequiresApi;
 import android.support.v4.app.Fragment;
+import android.support.v4.app.FragmentTransaction;
 import android.view.LayoutInflater;
 import android.view.MotionEvent;
 import android.view.View;
@@ -22,7 +22,6 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.text.ParseException;
-import java.util.Locale;
 import java.util.concurrent.ExecutionException;
 
 import static android.content.Context.INPUT_METHOD_SERVICE;
@@ -31,19 +30,17 @@ import static android.content.Context.INPUT_METHOD_SERVICE;
  * Created by leoci on 30/05/2017.
  */
 
-public class CadastraControleFragment extends Fragment {
+public class EditaControleFragment  extends Fragment {
     private String cookie;
     private View view;
-
     @RequiresApi(api = Build.VERSION_CODES.N)
     @Nullable
     @Override
     public View onCreateView(LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
+        view = inflater.inflate(R.layout.activity_edita_controle, container, false);
 
-        view = inflater.inflate(R.layout.activity_cadastra_controle, container, false);
-
-        ScrollView loginScrollView = (ScrollView) view.findViewById(R.id.scrollViewCadastraControle);
-        loginScrollView.setOnTouchListener(new View.OnTouchListener() {
+        ScrollView scrollViewEditaControle = (ScrollView) view.findViewById(R.id.scrollViewEditaControle);
+        scrollViewEditaControle.setOnTouchListener(new View.OnTouchListener() {
             @Override
             public boolean onTouch(View v, MotionEvent event) {
                 InputMethodManager imm = (InputMethodManager) getActivity().getSystemService( INPUT_METHOD_SERVICE);
@@ -56,17 +53,17 @@ public class CadastraControleFragment extends Fragment {
             }
         });
 
+        final EditText txtData = (EditText) view.findViewById(R.id.txtData);
+        txtData.setText(getArguments().getString("data"));
+        final EditText txtDescricao = (EditText) view.findViewById(R.id.txtDescricao);
+        txtDescricao.setText(getArguments().getString("descricao"));
+        final EditText txtEntrada = (EditText) view.findViewById(R.id.txtEntrada);
+        txtEntrada.setText(getArguments().getString("entrada"));
+        final EditText txtSaida = (EditText) view.findViewById(R.id.txtSaida);
+        txtSaida.setText(getArguments().getString("saida"));
 
-        final EditText txtControleData = (EditText) view.findViewById(R.id.txtData);
-        final EditText txtControleDescricao = (EditText) view.findViewById(R.id.txtDescricao);
-        final EditText txtControleEntrada = (EditText) view.findViewById(R.id.txtEntrada);
-        final EditText txtControleSaida = (EditText) view.findViewById(R.id.txtSaida);
-
-        final SimpleDateFormat data = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault());
-        txtControleData.setText(data.format(Calendar.getInstance().getTime()));
-
-        final Button btnControleSalvar = (Button) view.findViewById(R.id.btnSalvar);
-        btnControleSalvar.setOnClickListener(new View.OnClickListener() {
+        final Button btnSalvar = (Button) view.findViewById(R.id.btnSalvar);
+        btnSalvar.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
 
@@ -79,39 +76,41 @@ public class CadastraControleFragment extends Fragment {
                 v.setFocusableInTouchMode(false);
 
                 JSONObject jsonObject = new JSONObject();
-
+                SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
                 try {
-                    SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
-                    java.util.Date d = sdf.parse(txtControleData.getText().toString());
+                    java.util.Date d = sdf.parse(txtData.getText().toString());
                     java.sql.Date dataSql = new java.sql.Date(d.getTime());
                     jsonObject.put("data",dataSql);
-                    jsonObject.put("descricao",txtControleDescricao.getText().toString());
-                    String entradaStr = txtControleEntrada.getText().toString();
+                    jsonObject.put("descricao",txtDescricao.getText().toString());
+                    String entradaStr = txtEntrada.getText().toString();
                     if(entradaStr.equals("")){
                         entradaStr = "0.0";
                     }
                     jsonObject.put("entrada",new BigDecimal(entradaStr));
-                    String saidaStr = txtControleSaida.getText().toString();
+                    String saidaStr = txtSaida.getText().toString();
                     if(saidaStr.equals("")){
                         saidaStr = "0.0";
                     }
                     jsonObject.put("saida",new BigDecimal(saidaStr));
-
                     ServerSide serverSide = new ServerSide();
-                    PostAsyncTask postAsyncTask = new PostAsyncTask();
-
+                    PutAsyncTask putAsyncTask = new PutAsyncTask();
                     cookie = getArguments().getString("cookie");
-                    String resposta = postAsyncTask.execute(serverSide.getServer() + "controles", jsonObject.toString(), cookie).get();
+                    String resposta = putAsyncTask.execute(serverSide.getServer() + "controles/" + Long.parseLong(getArguments().getString("identifier")), jsonObject.toString(), cookie).get();
 
                     if (resposta == null){
                         Toast.makeText(getContext(), "Erro do servidor " + resposta, Toast.LENGTH_LONG).show();
                     } else if (resposta.equals("http")) {
-                        Toast.makeText(getContext(), "Erro do servidor " + postAsyncTask.getCodeResponse(), Toast.LENGTH_LONG).show();
+                        Toast.makeText(getContext(), "Erro do servidor " + putAsyncTask.getCodeResponse(), Toast.LENGTH_LONG).show();
                     } else if (resposta.equals("sucess")){
-                        txtControleDescricao.setText("");
-                        txtControleEntrada.setText("");
-                        txtControleSaida.setText("");
-                        Toast.makeText(getContext(), "Dados salvos", Toast.LENGTH_LONG).show();
+                        Toast.makeText(getContext(), "Editado com sucesso!", Toast.LENGTH_LONG).show();
+                        Bundle bundle = new Bundle();
+                        bundle.putString("cookie", cookie);
+                        ControleFragment fragment = new ControleFragment();
+                        fragment.setArguments(bundle);
+                        FragmentTransaction ft = getFragmentManager().beginTransaction();
+                        ft.replace(R.id.fragment_content, fragment);
+                        ft.addToBackStack(null);
+                        ft.commit();
                     }
                 } catch (ParseException e) {
                     e.printStackTrace();
