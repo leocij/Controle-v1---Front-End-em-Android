@@ -1,11 +1,15 @@
 package com.lemelo.controlev1;
 
+import android.content.DialogInterface;
+import android.content.Intent;
 import android.os.Build;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
 import android.support.annotation.RequiresApi;
 import android.support.design.widget.FloatingActionButton;
 import android.support.v4.app.Fragment;
+import android.support.v4.app.FragmentTransaction;
+import android.support.v7.app.AlertDialog;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -33,47 +37,50 @@ import java.util.concurrent.ExecutionException;
  */
 
 public class ControleFragment extends Fragment {
-
     private String cookie;
+    private View view;
 
     @RequiresApi(api = Build.VERSION_CODES.KITKAT)
     @Nullable
     @Override
     public View onCreateView(LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
-        View view = inflater.inflate(R.layout.activity_controle, container, false);
+        view = inflater.inflate(R.layout.activity_controle, container, false);
         FloatingActionButton fab = (FloatingActionButton) view.findViewById(R.id.controleFab);
 
-        imprimeControles(view);
+        imprime(view);
 
         fab.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                //TODO criar método para chamar cadastro.
-
-                //cadastraControle();
-
-                Toast.makeText(getContext(), "Deu Certo", Toast.LENGTH_SHORT).show();
+                cookie = getArguments().getString("cookie");
+                Bundle bundle = new Bundle();
+                bundle.putString("cookie", cookie);
+                CadastraControleFragment cadastra = new CadastraControleFragment();
+                cadastra.setArguments(bundle);
+                android.support.v4.app.FragmentManager fm = getFragmentManager();
+                FragmentTransaction ft = fm.beginTransaction();
+                ft.replace(R.id.fragment_content, cadastra);
+                ft.commit();
             }
         });
         return view;
     }
 
     @RequiresApi(api = Build.VERSION_CODES.KITKAT)
-    private void imprimeControles(View view) {
+    private void imprime(View view) {
 
         ServerSide serverSide = new ServerSide();
-        ThreadAsyncTask task = new ThreadAsyncTask();
-        task.setMethod("GET");
+        GetAsyncTask getAsyncTask = new GetAsyncTask();
 
         try {
-            String teste = getArguments().getString("cookie");
-            String resposta = task.execute(serverSide.getServer() + "controles", null, teste).get();
+            cookie = getArguments().getString("cookie");
+            String resposta = getAsyncTask.execute(serverSide.getServer() + "controles", null, cookie).get();
             if (resposta == null){
                 Toast.makeText(getContext(), "Erro do servidor " + resposta, Toast.LENGTH_LONG).show();
             } else if (resposta.equals("http")) {
-                Toast.makeText(getContext(), "Erro do servidor " + task.getCodeResponse(), Toast.LENGTH_LONG).show();
+                Toast.makeText(getContext(), "Erro do servidor " + getAsyncTask.getCodeResponse(), Toast.LENGTH_LONG).show();
             } else if (resposta.equals("buffer")) {
-                JSONArray jsonArray = new JSONArray(task.getBuffer().toString());
+                JSONArray jsonArray = new JSONArray(getAsyncTask.getBuffer().toString());
                 List<Controle> list = new ArrayList<>();
                 for (int i = 0; i < jsonArray.length(); i++) {
                     Controle l = new Controle();
@@ -107,8 +114,8 @@ public class ControleFragment extends Fragment {
                 lvImprimeControles.setOnItemClickListener(new AdapterView.OnItemClickListener() {
                     @Override
                     public void onItemClick(AdapterView parent, View view, int position, long id) {
-                        Controle controleSelecionado = (Controle) parent.getItemAtPosition(position);
-                        trataControleSelecionado(controleSelecionado);
+                        Controle selecionado = (Controle) parent.getItemAtPosition(position);
+                        trataSelecionado(selecionado);
                     }
                 });
             }
@@ -123,7 +130,64 @@ public class ControleFragment extends Fragment {
         }
     }
 
-    private void trataControleSelecionado(Controle controleSelecionado) {
+    private void trataSelecionado(final Controle selecionado) {
+        AlertDialog.Builder dialogo = new AlertDialog.Builder(getActivity());
+        dialogo.setTitle("Editar / Apagar?");
+        dialogo.setMessage(selecionado.toString());
+
+        dialogo.setNegativeButton("Editar", new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                CarregaTelaEditar(selecionado);
+            }
+        });
+
+        dialogo.setPositiveButton("Apagar", new DialogInterface.OnClickListener() {
+            @RequiresApi(api = Build.VERSION_CODES.KITKAT)
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+
+                AlertDialog.Builder dialogDel = new AlertDialog.Builder(getActivity());
+                dialogDel.setTitle("Deseja realmente apagar?");
+                dialogDel.setMessage(selecionado.toString());
+
+                dialogDel.setNegativeButton("Sim", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialogDel, int which) {
+                        Long idDelete = selecionado.getIdentifier();
+                        ServerSide serverSide = new ServerSide();
+                        DeleteAsyncTask deleteAsyncTask = new DeleteAsyncTask();
+                        try {
+                            String resposta = deleteAsyncTask.execute(serverSide.getServer() + "controles/" + idDelete, null, cookie).get();
+                            if (resposta == null){
+                                Toast.makeText(getContext(), "Erro do servidor " + resposta, Toast.LENGTH_LONG).show();
+                            } else if (resposta.equals("http")) {
+                                Toast.makeText(getContext(), "Erro do servidor " + deleteAsyncTask.getCodeResponse(), Toast.LENGTH_LONG).show();
+                            }else if (resposta.equals("sucess")){
+                                Toast.makeText(getContext(), "Dado deletado!" + deleteAsyncTask.getDado(), Toast.LENGTH_LONG).show();
+                                imprime(view);
+                            }
+                        } catch (InterruptedException e) {
+                            e.printStackTrace();
+                        } catch (ExecutionException e) {
+                            e.printStackTrace();
+                        }
+                    }
+                });
+
+                dialogDel.setPositiveButton("Não", null);
+                dialogDel.show();
+            }
+
+        });
+
+        dialogo.setNeutralButton("Cancelar", null);
+        dialogo.show();
+    }
+
+    private void CarregaTelaEditar(Controle selecionado) {
 
     }
+
+
 }

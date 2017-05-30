@@ -9,6 +9,11 @@
             android:icon="@drawable/ic_menu_controle"
             android:title="@string/controle"
             />
+        <item
+            android:id="@+id/nav_barganha"
+            android:icon="@drawable/ic_menu_barganha"
+            android:title="@string/barganha"
+            />
     </group>
 
 </menu>

@@ -64,6 +64,13 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
             FragmentTransaction ft = fm.beginTransaction();
             ft.replace(R.id.fragment_content, controleFragment);
             ft.commit();
+        } else if (id == R.id.nav_barganha) {
+            BarganhaFragment barganhaFragment = new BarganhaFragment();
+            barganhaFragment.setArguments(bundle);
+            android.support.v4.app.FragmentManager fm = getSupportFragmentManager();
+            FragmentTransaction ft = fm.beginTransaction();
+            ft.replace(R.id.fragment_content, barganhaFragment);
+            ft.commit();
         }
 
         DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
